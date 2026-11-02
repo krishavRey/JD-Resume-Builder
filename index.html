@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Resume Tailor</title>
+<meta name="theme-color" content="#2563eb">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--text:#1a1d23;--muted:#6b7280;--line:#dfe3e8;--accent:#2563eb;--accent-t:#fff;--err:#b42318;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111317;--card:#1a1d23;--text:#eceef2;--muted:#9aa3b2;--line:#2d333d;--accent:#5b8def;--accent-t:#0b0d11;--err:#f97066;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#111317;--card:#1a1d23;--text:#eceef2;--muted:#9aa3b2;--line:#2d333d;--accent:#5b8def;--accent-t:#0b0d11;--err:#f97066;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:24px;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 20px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:720px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card h2{font-size:15px;margin:0 0 10px}
+textarea{width:100%;height:280px;resize:vertical;background:transparent;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;font:inherit}
+.drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;height:280px;border:2px dashed var(--line);border-radius:8px;text-align:center;color:var(--muted);cursor:pointer;padding:12px}
+.drop.on{border-color:var(--accent)}
+.drop b{color:var(--text);word-break:break-all}
+.center{display:flex;flex-direction:column;align-items:center;gap:10px;margin:20px 0}
+button{font:inherit;font-weight:600;border:0;border-radius:10px;padding:12px 28px;background:var(--accent);color:var(--accent-t);cursor:pointer}
+button.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+button:disabled{opacity:.5;cursor:not-allowed}
+.msg{min-height:20px;color:var(--muted);font-size:14px;text-align:center}
+.msg.err{color:var(--err)}
+.hide{display:none}
+.paper{background:#fff;color:#111;border:1px solid var(--line);border-radius:6px;padding:32px 36px;font:13px/1.45 Calibri,Arial,sans-serif;overflow-x:auto}
+.paper h3{font-size:20px;margin:0}
+.paper .ct{color:#444;margin:2px 0 8px}
+.paper h4{font-size:12px;letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid #999;margin:14px 0 6px;padding-bottom:2px}
+.paper .row{display:flex;justify-content:space-between;gap:12px;font-weight:700}
+.paper .row span:last-child{font-weight:400;white-space:nowrap}
+.paper ul{margin:3px 0 6px;padding-left:20px}
+.notes{margin-top:14px;font-size:14px;color:var(--muted)}
+.bar{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Resume Tailor</h1>
+  <p class="sub">Paste a job description, upload your CV, and get an ATS-friendly version tuned to that role.</p>
+
+  <section id="p1">
+    <div class="card" style="margin-bottom:16px">
+      <h2>Your API key (free Gemini key or Claude key)</h2>
+      <input id="key" type="password" autocomplete="off" placeholder="Paste your Gemini (AIza…) or Claude (sk-ant-…) key" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--text);font:inherit">
+      <label style="display:block;margin-top:8px;font-size:14px;color:var(--muted)"><input type="checkbox" id="remember"> Remember on this device</label>
+      <div class="notes"><b>Free option:</b> get a Gemini key at aistudio.google.com (no card needed). Claude keys come from console.anthropic.com. The key stays in your browser and is sent only to Google or Anthropic. Your CV and the job description are sent to that provider to be rewritten. Google says free-tier data may be used to improve its products, so use a paid key or Claude if that worries you.</div>
+    </div>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <h2>1. Paste the job description</h2>
+        <textarea id="jd" placeholder="Paste the full job description here…"></textarea>
+      </div>
+      <div class="card">
+        <h2>2. Upload your resume</h2>
+        <label class="drop" id="drop">
+          <input id="file" type="file" accept=".pdf,.docx,.txt" class="hide">
+          <span id="fname">Click or drop your CV here<br><small>PDF, DOCX or TXT</small></span>
+        </label>
+      </div>
+    </div>
+    <div class="center">
+      <button id="gen">Generate</button>
+      <div class="msg" id="msg"></div>
+    </div>
+  </section>
+
+  <section id="p2" class="hide">
+    <div class="card"><div class="paper" id="paper"></div><div class="notes" id="notes"></div></div>
+    <div class="bar">
+      <button id="dl">Download</button>
+      <button class="ghost" id="back">Start over</button>
+    </div>
+    <div class="msg" id="msg2"></div>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+let cvText = "", result = null;
+
+if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+function setMsg(el, t, err){ el.textContent = t; el.className = "msg" + (err ? " err" : ""); }
+
+async function readFile(f){
+  const ext = f.name.split(".").pop().toLowerCase();
+  if (ext === "txt") return await f.text();
+  const buf = await f.arrayBuffer();
+  if (ext === "docx") return (await mammoth.extractRawText({arrayBuffer: buf})).value;
+  if (ext === "pdf"){
+    const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+    let out = "";
+    for (let i = 1; i <= pdf.numPages; i++){
+      const tc = await (await pdf.getPage(i)).getTextContent();
+      let line = "";
+      tc.items.forEach(it => { line += it.str; line += it.hasEOL ? "\n" : " "; });
+      out += line + "\n";
+    }
+    return out;
+  }
+  throw new Error("Unsupported file type");
+}
+
+async function onFile(f){
+  if (!f) return;
+  setMsg($("msg"), "Reading your CV…");
+  try{
+    cvText = (await readFile(f)).trim();
+    if (cvText.length < 50) throw new Error("empty");
+    $("fname").innerHTML = "<b></b><br><small>Click to replace</small>";
+    $("fname").querySelector("b").textContent = f.name;
+    setMsg($("msg"), "");
+  }catch(e){
+    cvText = "";
+    setMsg($("msg"), "Couldn’t read text from that file. Scanned PDFs don’t work; try a DOCX or a text-based PDF.", true);
+  }
+}
+$("file").addEventListener("change", e => onFile(e.target.files[0]));
+const drop = $("drop");
+["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("on"); }));
+["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("on"); }));
+drop.addEventListener("drop", e => onFile(e.dataTransfer.files[0]));
+
+const PROMPT = `You are an expert resume writer and ATS specialist. Rewrite the candidate's resume so it is tailored to the job description.
+Rules:
+- Use ONLY facts present in the original resume. Never invent employers, titles, dates, degrees, tools, metrics or skills. If a JD keyword is not supported by the resume, do not add it; list it in "missing".
+- Mirror the JD's exact wording for skills and responsibilities the candidate genuinely has.
+- Reorder bullets and sections so the most relevant material comes first. Use strong action verbs; keep bullets concise.
+- Write a 2-3 line professional summary aimed at this role.
+- Plain, single-column, ATS-safe content: standard section names only.
+Return ONLY valid JSON, no markdown fences, with this shape:
+{"name":"","contact":"phone | email | location | links","headline":"","summary":"","skills":["..."],"experience":[{"title":"","company":"","location":"","dates":"","bullets":["..."]}],"education":[{"degree":"","school":"","dates":""}],"extras":[{"heading":"","items":["..."]}],"matched":["JD keywords now covered"],"missing":["JD keywords the resume does not support"]}`;
+
+$("gen").addEventListener("click", async () => {
+  const jd = $("jd").value.trim();
+  if (jd.length < 80) return setMsg($("msg"), "Please paste a fuller job description.", true);
+  if (!cvText) return setMsg($("msg"), "Please upload your resume first.", true);
+  $("gen").disabled = true;
+  setMsg($("msg"), "Tailoring your resume… this can take up to a minute.");
+  try{
+    const key = $("key").value.trim();
+    if (!key) throw {code:"nokey"};
+    try { if ($("remember").checked) localStorage.setItem("rt_key", key); else localStorage.removeItem("rt_key"); } catch(_){}
+    const full = PROMPT + "\n\nJOB DESCRIPTION:\n" + jd + "\n\nRESUME:\n" + cvText;
+    let txt = "";
+    if (key.startsWith("sk-ant-")){
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {"content-type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        body: JSON.stringify({model:"claude-sonnet-5-5", max_tokens:4000, messages:[{role:"user", content: full}]})
+      });
+      if (!res.ok) throw {code: res.status === 401 ? "badkey" : res.status === 429 ? "rate_limited" : "http"};
+      const data = await res.json();
+      txt = (data.content || []).map(c => c.text || "").join("");
+    } else {
+      const models = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-2.5-flash"];
+      let ok = false, last = 0;
+      for (const m of models){
+        const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + m + ":generateContent", {
+          method: "POST",
+          headers: {"content-type":"application/json","x-goog-api-key":key},
+          body: JSON.stringify({contents:[{parts:[{text: full}]}], generationConfig:{responseMimeType:"application/json", maxOutputTokens:8192}})
+        });
+        last = res.status;
+        if (res.ok){
+          const d = await res.json();
+          txt = (((d.candidates || [])[0] || {}).content || {parts:[]}).parts.map(p => p.text || "").join("");
+          ok = true; break;
+        }
+        if (res.status === 400 || res.status === 401 || res.status === 403) throw {code:"badkey"};
+      }
+      if (!ok) throw {code: last === 429 ? "rate_limited" : "http"};
+    }
+    txt = txt.replace(/```json|```/g, "").trim();
+    result = JSON.parse(txt.slice(txt.indexOf("{"), txt.lastIndexOf("}") + 1));
+    render(result);
+    $("p1").classList.add("hide"); $("p2").classList.remove("hide");
+    window.scrollTo(0,0);
+    setMsg($("msg"), "");
+  }catch(e){
+    const m = e && e.code === "nokey" ? "Please paste your API key first."
+      : e && e.code === "badkey" ? "That API key was rejected. Check it and try again."
+      : e && e.code === "rate_limited" ? "Free limit reached or too many requests. Wait a minute and retry, or try again tomorrow."
+      : "Something went wrong while generating. Check your key and connection, then try again.";
+    setMsg($("msg"), m, true);
+  }
+  $("gen").disabled = false;
+});
+
+function el(tag, text, cls){ const n = document.createElement(tag); if (text != null) n.textContent = text; if (cls) n.className = cls; return n; }
+
+function render(r){
+  const p = $("paper"); p.innerHTML = "";
+  p.append(el("h3", r.name || ""));
+  if (r.contact) p.append(el("div", r.contact, "ct"));
+  if (r.headline) p.append(el("div", r.headline));
+  const sec = t => p.append(el("h4", t));
+  if (r.summary){ sec("Summary"); p.append(el("div", r.summary)); }
+  if (r.skills && r.skills.length){ sec("Skills"); p.append(el("div", r.skills.join(", "))); }
+  if (r.experience && r.experience.length){
+    sec("Experience");
+    r.experience.forEach(x => {
+      const row = el("div", null, "row");
+      row.append(el("span", [x.title, x.company, x.location].filter(Boolean).join(", ")), el("span", x.dates || ""));
+      p.append(row);
+      const ul = el("ul"); (x.bullets || []).forEach(b => ul.append(el("li", b))); p.append(ul);
+    });
+  }
+  if (r.education && r.education.length){
+    sec("Education");
+    r.education.forEach(x => {
+      const row = el("div", null, "row");
+      row.append(el("span", [x.degree, x.school].filter(Boolean).join(", ")), el("span", x.dates || ""));
+      p.append(row);
+    });
+  }
+  (r.extras || []).forEach(x => { sec(x.heading); const ul = el("ul"); (x.items || []).forEach(i => ul.append(el("li", i))); p.append(ul); });
+  const n = $("notes"); n.innerHTML = "";
+  if (r.missing && r.missing.length){
+    n.append(el("div", "Keywords from the JD that your CV doesn’t support (only add them if they’re true): " + r.missing.join(", ")));
+  }
+}
+
+function toMarkdown(r){
+  let s = `# ${r.name}\n${r.contact || ""}\n\n`;
+  if (r.summary) s += `## Summary\n${r.summary}\n\n`;
+  if (r.skills) s += `## Skills\n${r.skills.join(", ")}\n\n`;
+  s += "## Experience\n";
+  (r.experience || []).forEach(x => { s += `\n**${[x.title, x.company, x.location].filter(Boolean).join(", ")}** (${x.dates || ""})\n` + (x.bullets || []).map(b => `- ${b}`).join("\n") + "\n"; });
+  s += "\n## Education\n" + (r.education || []).map(x => `- ${[x.degree, x.school].filter(Boolean).join(", ")} (${x.dates || ""})`).join("\n") + "\n";
+  (r.extras || []).forEach(x => { s += `\n## ${x.heading}\n` + (x.items || []).map(i => `- ${i}`).join("\n") + "\n"; });
+  return s;
+}
+
+async function buildDocx(r){
+  const D = window.docx;
+  const F = "Calibri";
+  const run = (t, o = {}) => new D.TextRun({text: t, font: F, size: 21, ...o});
+  const head = t => new D.Paragraph({spacing:{before:200, after:60}, border:{bottom:{style:D.BorderStyle.SINGLE, size:6, color:"888888", space:1}}, children:[run(t.toUpperCase(), {bold:true, size:22})]});
+  const kids = [];
+  kids.push(new D.Paragraph({children:[run(r.name || "", {bold:true, size:36})]}));
+  if (r.contact) kids.push(new D.Paragraph({children:[run(r.contact)]}));
+  if (r.headline) kids.push(new D.Paragraph({children:[run(r.headline)]}));
+  if (r.summary){ kids.push(head("Summary"), new D.Paragraph({children:[run(r.summary)]})); }
+  if (r.skills && r.skills.length){ kids.push(head("Skills"), new D.Paragraph({children:[run(r.skills.join(", "))]})); }
+  if (r.experience && r.experience.length){
+    kids.push(head("Experience"));
+    r.experience.forEach(x => {
+      kids.push(new D.Paragraph({spacing:{before:100}, children:[run([x.title, x.company, x.location].filter(Boolean).join(", "), {bold:true}), run(x.dates ? "  |  " + x.dates : "")]}));
+      (x.bullets || []).forEach(b => kids.push(new D.Paragraph({bullet:{level:0}, children:[run(b)]})));
+    });
+  }
+  if (r.education && r.education.length){
+    kids.push(head("Education"));
+    r.education.forEach(x => kids.push(new D.Paragraph({children:[run([x.degree, x.school].filter(Boolean).join(", "), {bold:true}), run(x.dates ? "  |  " + x.dates : "")]})));
+  }
+  (r.extras || []).forEach(x => { kids.push(head(x.heading)); (x.items || []).forEach(i => kids.push(new D.Paragraph({bullet:{level:0}, children:[run(i)]}))); });
+  const doc = new D.Document({sections:[{properties:{page:{margin:{top:720, bottom:720, left:864, right:864}}}, children:kids}]});
+  return await D.Packer.toBlob(doc);
+}
+
+$("dl").addEventListener("click", async () => {
+  if (!result) return;
+  const base = ((result.name || "resume").replace(/[^\w]+/g, "_").replace(/^_|_$/g, "") || "resume") + "_tailored";
+  try{
+    let blob, name;
+    if (window.docx){ blob = await buildDocx(result); name = base + ".docx"; }
+    else { blob = new Blob([toMarkdown(result)], {type:"text/markdown"}); name = base + ".md"; }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    setMsg($("msg2"), "");
+  }catch(e){
+    setMsg($("msg2"), "The download couldn’t be started. Please try again.", true);
+  }
+});
+
+try { const k = localStorage.getItem("rt_key"); if (k){ $("key").value = k; $("remember").checked = true; } } catch(_){}
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+
+$("back").addEventListener("click", () => {
+  $("p2").classList.add("hide"); $("p1").classList.remove("hide");
+});
+</script>
+</body>
+</html>
